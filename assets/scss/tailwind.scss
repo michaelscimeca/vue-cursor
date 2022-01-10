@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  @import 'loco';
+
+  @font-face {
+    font-family: youngserifregular;
+    src: url('/fonts/young-serif/YoungSerif-Regular.eot');
+    src: url('/fonts/young-serif/YoungSerif-Regular.woff') format('woff'),
+    url('/fonts/young-serif/YoungSerif-Regular.ttf') format('truetype'),
+    url('/fonts/young-serif/YoungSerif-Regular.svg#youngserifregular') format('svg');
+  }
+
+  @font-face {
+    font-family: Circular-Book;
+    src:url('/fonts/circular/lineto-circular-book.eot');
+    src:url('/fonts/circular/lineto-circular-book.eot?#iefix') format('embedded-opentype'),
+    url('/fonts/circular/lineto-circular-book.woff2') format('woff2'),
+    url('/fonts/circular/lineto-circular-book.woff') format('woff');
+  }
+
+  @font-face {
+    font-family: Circular-Bold;
+    src:url('/fonts/circular/lineto-circular-bold.eot');
+    src:url('/fonts/circular/lineto-circular-bold.eot?#iefix') format('embedded-opentype'),
+    url('/fonts/circular/lineto-circular-bold.woff2') format('woff2'),
+    url('/fonts/circular/lineto-circular-bold.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+
+  h1 {
+    @apply text-7xl;
+  }
+
+  p {
+    @apply text-base;
+  }
+}

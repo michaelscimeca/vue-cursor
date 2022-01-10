@@ -1,0 +1,65 @@
+#about-page {
+
+#canvas {
+  width: 100vw;
+  height: 100vh;
+}
+
+  // #track {
+  //   position: absolute;
+  //   top: 0;
+  //   left: 0;
+  //   width: 100vw;
+  //   height: 100vh;
+  //   background-color:#18355f;
+  //   overflow: hidden;
+  //   display: flex;
+  //   flex-direction: row;
+  //   flex-wrap: nowrap;
+  //   justify-content: flex-start;
+  //   align-content: center;
+  //   align-items: center;
+  //
+  //   .track-item {
+  //     height: 273px;
+  //     width: calc(100vw);
+  //     margin: 0 20px;
+  //
+  //     .item {
+  //       pointer-events: none;
+  //       height: 100%;
+  //       width: 100%;
+  //       background-color: #0c203c;
+  //     }
+  //     &.active {
+  //       background-color: green;
+  //
+  //     }
+  //   }
+  // }
+
+  &.intro-enter-active {
+    opacity: 0;
+
+  }
+
+  &.intro-enter {
+    opacity: 1;
+    transition-property: opacity;
+    transition-timing-function: ease-in-out;
+    transition-duration: 500ms;
+  }
+
+  &.page-leave-active {
+    opacity: 1;
+    transition-property: opacity;
+    transition-timing-function: ease-in-out;
+    transition-duration: 500ms;
+  }
+
+  &.page-leave-to {
+    opacity: 0;
+  }
+
+
+}

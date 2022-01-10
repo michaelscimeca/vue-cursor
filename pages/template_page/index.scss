@@ -1,0 +1,27 @@
+#template-page {
+
+  &.intro-enter-active {
+    opacity: 0;
+
+  }
+
+  &.intro-enter {
+    opacity: 1;
+    transition-property: opacity;
+    transition-timing-function: ease-in-out;
+    transition-duration: 500ms;
+  }
+
+  &.page-leave-active {
+    opacity: 1;
+    transition-property: opacity;
+    transition-timing-function: ease-in-out;
+    transition-duration: 500ms;
+  }
+
+  &.page-leave-to {
+    opacity: 0;
+  }
+
+
+}

@@ -1,0 +1,32 @@
+// @import '@/assets/scss/_laconic';
+#home-page {
+
+  &.intro-enter-active {
+    opacity: 0;
+
+  }
+
+  &.intro-enter {
+    opacity: 1;
+    transition-property: opacity;
+    transition-timing-function: ease-in-out;
+    transition-duration: 500ms;
+  }
+
+  &.page-leave-active {
+    opacity: 1;
+    transition-property: opacity;
+    transition-timing-function: ease-in-out;
+    transition-duration: 500ms;
+  }
+
+  &.page-leave-to {
+    opacity: 0;
+  }
+
+
+  // .u-h1 {
+  //   font-size: f-clamp(rem(18), rem(28), rem(430), rem(640));
+  //   line-height: f-clamp(rem(20), rem(27), rem(430), rem(640));
+  // }
+}
