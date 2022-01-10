@@ -1,11 +1,9 @@
 <template>
 <div id="cursor-container" :class="classes">
-  <!-- <div id="orbit"></div> -->
-  <div id="attach" ref="attach"></div>
+  <div id="stroke" ref="stroke"></div>
   <div id="cursor" ref="cursor">
-    <div id="base" ref="base" :style="{ backgroundImage: 'url(' + this.cursorimages + ')' }"></div>
+    <div id="cursor-bg" :style="{ backgroundImage: 'url(' + this.cursorImage + ')' }"></div>
   </div>
-
 </div>
 </template>
 
@@ -13,7 +11,6 @@
 import {
   TweenMax
 } from 'gsap';
-
 import touchevents from '~/mixins/touchevents';
 export default {
   props: {},
@@ -22,11 +19,10 @@ export default {
   ],
   data() {
     return {
-      coords: [0, 0],
+      coords: [-30, -30],
       elmsData: [],
       elms: [],
-      hover: false,
-      defaultSize: 25
+      defaultSize: 25,
     };
   },
   computed: {
@@ -56,12 +52,14 @@ export default {
         size: parseInt(this.$store.state.mouseStatus.size)
       };
     },
-    cursorimages() {
+    cursorImage() {
       return this.$store.state.mouseStatus.cursorImage;
     }
   },
   watch: {
-    elm(oldVal, newVal) {},
+    elm(oldVal, newVal) {
+      // console.log(newVal, '1')
+    },
     activate(oldVal, newVal) {},
     mCoords() {
       this.$data.elmsData.forEach((elm, i, arr) => {
@@ -69,11 +67,43 @@ export default {
         this.disperseMouseData(i, arr, elm.node);
         // this.magnet(elm.node, elm.node.dataset.distance)
       });
-      this.gsapCursor(this.$refs.cursor, this.$refs.attach)
-
     }
   },
   methods: {
+    request: function() {
+      let reqAnimationId;
+      let smoothCursor = () => {
+        TweenMax.to(this.$refs.cursor, 0.25, {
+          x: this.mCoords[0] - (this.cursor.size / 2),
+          y: this.mCoords[1] - (this.cursor.size / 2),
+          width: this.cursor.size,
+          height: this.cursor.size,
+        });
+
+        TweenMax.to(this.$refs.stroke, 0.25, {
+          x: this.lerp(cursor.getBoundingClientRect().left - 7, this.mCoords[0], 0.1),
+          y: this.lerp(cursor.getBoundingClientRect().top - 7, this.mCoords[1], 0.1),
+          width: this.cursor.size + 10,
+          height: this.cursor.size + 10,
+        });
+
+        // TweenMax.to(this.elm, 0, {
+        //   x: -((Math.sin(this.angle(this.elm)) * this.hypotenuse(this.elm)) / 2),
+        //   y: -((Math.cos(this.angle(this.elm)) * this.hypotenuse(this.elm)) / 2)
+        // });
+        // this.magnet(this.elm, this.elm.dataset.distance);
+
+        reqAnimationId = requestAnimationFrame(smoothCursor)
+      }
+
+      (function() {
+        reqAnimationId = requestAnimationFrame(smoothCursor)
+      }());
+      //
+      // function end() {
+      //   cancelAnimationFrame(reqAnimationId)
+      // }
+    },
     middleCircle(elm) {
       let top = elm.getBoundingClientRect().top + (elm.getBoundingClientRect().height / 2);
       let left = elm.getBoundingClientRect().right - (elm.getBoundingClientRect().width / 2);
@@ -86,69 +116,18 @@ export default {
         y: y
       }
     },
-    lerp: function(start, end, amt) {
+    lerp(start, end, amt) {
       return (1 - amt) * start + amt * end
     },
-    magnet: function(elm, distance) {
+    magnet(elm, distance) {
       // console.log(this.hypotenuse(elm) < distance)
       if (this.hypotenuse(elm) < distance && this.activate) {
-        TweenMax.to(elm, 0, {
-          x: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2),
-          y: -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)
-        });
-        TweenMax.to(this.$refs.attach, 0, {
-          x: this.middleCircle(this.$refs.cursor).x,
-          y: this.middleCircle(this.$refs.cursor).y
-        });
+
       } else {
-        // TweenMax.to(elm, 0, {
-        //   x: 0,
-        //   y: 0
-        // });
-        // TweenMax.to(this.$refs.attach, 0, {
-        //   x: this.mCoords[0],
-        //   y: this.mCoords[1]
-        // });
-      }
-    },
-    gsapCursor: function(cursor, attach) {
-      TweenMax.to(cursor, 0.25, {
-        x: this.mCoords[0] - (this.cursor.size / 2),
-        y: this.mCoords[1] - (this.cursor.size / 2),
-        width: this.cursor.size,
-        height: this.cursor.size,
-      });
-      TweenMax.to(attach, 0.25, {
-        x: this.lerp(cursor.getBoundingClientRect().left - 8, this.mCoords[0], 0.1),
-        y: this.lerp(cursor.getBoundingClientRect().top - 8, this.mCoords[1], 0.1),
-        width: this.cursor.size + 10,
-        height: this.cursor.size + 10,
-      });
-    },
-    request: function() {
-      let reqAnimationId;
-      let degrees = 25;
-      let radians = 25 * (Math.PI / 180);
-      let earthSpeed = .05;
-      let smoothAnimation = () => {
-        radians += earthSpeed;
-        // console.log(this.radians)
-        var x = Math.cos(radians) * 30;
-        var y = Math.sin(radians) * 30;
-        TweenMax.to("#orbit", 0.2, {
-          x: x,
-          y: y
+        TweenMax.to(elm, 0, {
+          x: 0,
+          y: 0
         });
-        reqAnimationId = requestAnimationFrame(smoothAnimation)
-      }
-
-      function start() {
-        reqAnimationId = requestAnimationFrame(smoothAnimation)
-      }
-      start()
-
-      function end() {
-        cancelAnimationFrame(reqAnimationId)
       }
     },
     hypotenuse(elm) {
@@ -159,7 +138,7 @@ export default {
       };
       return Math.sqrt(distance.x * distance.x + distance.y * distance.y);
     },
-    angle: function(elm) {
+    angle(elm) {
       let element = elm.getBoundingClientRect();
       let distance = {
         x: (element.left + element.width / 2) - this.mCoords[0],
@@ -172,10 +151,12 @@ export default {
       this.setAttributes(elm, {
         hypotenuse: this.hypotenuse(elm),
         index: i,
+        inProxy: this.hypotenuse(elm) <= elm.dataset.distance
       });
       /// Apply list
       Object.assign(arr[i], {
         hypotenuse: this.hypotenuse(elm),
+        inProxy: this.hypotenuse(elm) <= elm.dataset.distance
       });
     },
     onMouseMove(e) {
@@ -201,8 +182,8 @@ export default {
 
   mounted: function() {
     if (!this.touchevents) {
-      // document.body.style.cursor = 'none';
-      // Attach Mouse Listener
+      document.body.style.cursor = 'none';
+      // stroke Mouse Listener
       document.querySelector('body').addEventListener('mousemove', (e) => this.onMouseMove(e));
       // Grab Elements
       this.$data.elms = [...document.querySelectorAll('[data-cursor-hover]')];
@@ -210,9 +191,6 @@ export default {
       this.$data.elms.forEach((elm, i) => {
         elm.addEventListener('mouseenter', (e) => this.onMouseEnter(e));
         elm.addEventListener('mouseleave', (e) => this.onMouseLeave(e));
-        // this.magnet(elm, elm.dataset.distance);
-
-        // this.magnet(elm, elm.dataset.distance);
         // Form Data array about grab elements
         this.$data.elmsData.push({
           index: i,
@@ -220,7 +198,7 @@ export default {
           data: elm.dataset,
         });
       });
-      // this.request();
+      this.request();
     }
   },
   beforeDestroy: function() {
@@ -238,18 +216,26 @@ $size: 25px;
     height: 100%;
     z-index: 99999999;
     pointer-events: none;
-
+    // Js Vue Classes
     &.cursor-hover {
         height: $size + 10;
         width: $size + 10;
-        // background-color: red;
     }
+
     #cursor {
         width: $size;
         height: $size;
+        overflow: hidden;
+        #cursor-bg {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-repeat: none;
+            background-size: cover;
+        }
     }
 
-    #attach {
+    #stroke {
         position: absolute;
         top: 0;
         left: 0;
@@ -257,24 +243,10 @@ $size: 25px;
         height: $size;
         border-radius: 50%;
         border: 1px solid red;
-        opacity: 1;
-    }
-    #base {
-        width: 100%;
-        height: 100%;
-        background-repeat: none;
-        background-size: cover;
-        overflow: hidden;
-        border-radius: 50%;
-        background-color: gray;
     }
 }
-
-#orbit {
-    position: absolute;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background-color: green;
+/// Attributes in proxy
+[inproxy='true'] {
+    padding: 20px;
 }
 </style>

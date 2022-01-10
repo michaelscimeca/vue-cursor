@@ -47,13 +47,19 @@ export default {
       items: [{
           img: '/img/cat.jpg',
           size: 35,
-          distance: 200,
+          distance: 300,
         },
         {
           img: '/img/image.jpg',
           size: 45,
-          distance: 100,
-        }, {
+          distance: 300,
+        },
+        {
+          img: '/img/image.jpg',
+          size: 45,
+          distance: 300,
+        },
+        {
           img: '/img/cat.jpg',
           size: 66,
           distance: 300,
