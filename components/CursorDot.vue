@@ -7,7 +7,30 @@
 </div>
 </template>
 
+
 <script>
+/*
+Element
+
+Select elements by using data-cursor-hover
+Providing an background image for cursor  :data-img="item.img"
+Change size of cursor :data-size="item.size"
+Giving Proxy Distance :data-distance="item.distance"
+Hypotenuse is the distance between center of element and cursor
+InProxy Attbutes will be set to true if the elements is in distance givin
+
+initial Mount
+
+Select Body & add mouseMove Listener
+Select Elements
+Add mouseEnter & mouseLeave Listener to elements
+Fire startCursor Function
+
+Style
+
+Element has [inproxy='true'] when cursor position is in proxy distance
+
+*/
 import {
   TweenMax
 } from 'gsap';
@@ -70,7 +93,7 @@ export default {
     }
   },
   methods: {
-    request: function() {
+    startCursor: function() {
       let reqAnimationId;
       let smoothCursor = () => {
         TweenMax.to(this.$refs.cursor, 0.25, {
@@ -87,9 +110,9 @@ export default {
           height: this.cursor.size + 10,
         });
 
-        // TweenMax.to(this.elm, 0, {
-        //   x: -((Math.sin(this.angle(this.elm)) * this.hypotenuse(this.elm)) / 2),
-        //   y: -((Math.cos(this.angle(this.elm)) * this.hypotenuse(this.elm)) / 2)
+        // TweenMax.to(this.node, 0, {
+        //   x: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2),
+        //   y: -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)
         // });
         // this.magnet(this.elm, this.elm.dataset.distance);
 
@@ -116,9 +139,7 @@ export default {
         y: y
       }
     },
-    lerp(start, end, amt) {
-      return (1 - amt) * start + amt * end
-    },
+
     magnet(elm, distance) {
       // console.log(this.hypotenuse(elm) < distance)
       if (this.hypotenuse(elm) < distance && this.activate) {
@@ -130,22 +151,7 @@ export default {
         });
       }
     },
-    hypotenuse(elm) {
-      let element = elm.getBoundingClientRect();
-      let distance = {
-        x: (element.left + element.width / 2) - this.mCoords[0],
-        y: (element.top + element.height / 2) - this.mCoords[1]
-      };
-      return Math.sqrt(distance.x * distance.x + distance.y * distance.y);
-    },
-    angle(elm) {
-      let element = elm.getBoundingClientRect();
-      let distance = {
-        x: (element.left + element.width / 2) - this.mCoords[0],
-        y: (element.top + element.height / 2) - this.mCoords[1]
-      };
-      return Math.atan2(distance.x, distance.y)
-    },
+
     disperseMouseData(i, arr, elm) {
       // Apply Data to element
       this.setAttributes(elm, {
@@ -175,6 +181,31 @@ export default {
       this.$store.commit('mouseStatus/addImages', '/img/default.jpg');
       this.$store.commit('mouseStatus/updateSize', this.defaultSize)
     },
+    lerp(start, end, amt) {
+      return (1 - amt) * start + amt * end
+    },
+    m(elm) {
+      return {
+        x: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2),
+        y: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)
+      }
+    },
+    hypotenuse(elm) {
+      let element = elm.getBoundingClientRect();
+      let distance = {
+        x: (element.left + element.width / 2) - this.mCoords[0],
+        y: (element.top + element.height / 2) - this.mCoords[1]
+      };
+      return Math.sqrt(distance.x * distance.x + distance.y * distance.y);
+    },
+    angle(elm) {
+      let element = elm.getBoundingClientRect();
+      let distance = {
+        x: (element.left + element.width / 2) - this.mCoords[0],
+        y: (element.top + element.height / 2) - this.mCoords[1]
+      };
+      return Math.atan2(distance.x, distance.y)
+    },
     setAttributes(el, attrs) {
       Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
     },
@@ -198,7 +229,7 @@ export default {
           data: elm.dataset,
         });
       });
-      this.request();
+      this.startCursor();
     }
   },
   beforeDestroy: function() {
