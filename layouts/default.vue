@@ -18,7 +18,7 @@
 
       <div id="project-content">
         <div v-for="item, i in items" class="project-one-blist" data-cursor-hover :data-img="item.img" :data-size="item.size" :data-distance="item.distance">
-          <img :src="item.img" alt="img">
+          <img data-magnet class="img" :src="item.img" alt="img">
         </div>
       </div>
     </main>
@@ -47,22 +47,22 @@ export default {
       items: [{
           img: '/img/cat.jpg',
           size: 35,
-          distance: 300,
+          distance: 150,
         },
         {
           img: '/img/image.jpg',
           size: 45,
-          distance: 300,
+          distance: 150,
         },
         {
           img: '/img/image.jpg',
           size: 45,
-          distance: 300,
+          distance: 150,
         },
         {
           img: '/img/cat.jpg',
           size: 66,
-          distance: 300,
+          distance: null,
         }
       ]
     };
@@ -205,7 +205,6 @@ body {
         width: calc(50% - 40px);
         height: 25vh;
         margin: 20px;
-        transition: all 350ms ease-in;
         box-sizing: border-box;
         background-color: green;
 

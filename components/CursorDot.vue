@@ -1,13 +1,12 @@
 <template>
 <div id="cursor-container" :class="classes">
-  <div id="stroke" ref="stroke"></div>
+  <div v-if="this.$data.cursorStroke" id="stroke" ref="stroke"></div>
   <div id="cursor" ref="cursor">
-    <div id="cursor-bg" :style="{ backgroundImage: 'url(' + this.cursorImage + ')' }"></div>
+    <div v-if="!this.$data.imageCursor" id="cursor-dot" :style="{width: `${this.cursor.size}px`, height: `${this.cursor.size}px`}"></div>
+    <div v-if="this.$data.imageCursor" id="cursor-bg" :style="{ backgroundImage: 'url(' + this.cursorImage + ')' }"></div>
   </div>
 </div>
 </template>
-
-
 <script>
 /*
 Element
@@ -29,7 +28,6 @@ Fire startCursor Function
 Style
 
 Element has [inproxy='true'] when cursor position is in proxy distance
-
 */
 import {
   TweenMax
@@ -43,9 +41,13 @@ export default {
   data() {
     return {
       coords: [-30, -30],
-      elmsData: [],
       elms: [],
-      defaultSize: 25,
+      elmsData: [],
+      defaultSize: 10,
+      speed: 0.2,
+      showMagnetProxy: true,
+      imageCursor: false,
+      cursorStroke: false,
     };
   },
   computed: {
@@ -80,15 +82,12 @@ export default {
     }
   },
   watch: {
-    elm(oldVal, newVal) {
-      // console.log(newVal, '1')
-    },
-    activate(oldVal, newVal) {},
+    elm() {},
+    activate() {},
     mCoords() {
       this.$data.elmsData.forEach((elm, i, arr) => {
         /// Updates List of Elements object of data
         this.disperseMouseData(i, arr, elm.node);
-        // this.magnet(elm.node, elm.node.dataset.distance)
       });
     }
   },
@@ -96,25 +95,34 @@ export default {
     startCursor: function() {
       let reqAnimationId;
       let smoothCursor = () => {
-        TweenMax.to(this.$refs.cursor, 0.25, {
+        // Cursor
+        TweenMax.to(this.$refs.cursor, this.$data.speed, {
           x: this.mCoords[0] - (this.cursor.size / 2),
           y: this.mCoords[1] - (this.cursor.size / 2),
           width: this.cursor.size,
           height: this.cursor.size,
         });
-
-        TweenMax.to(this.$refs.stroke, 0.25, {
-          x: this.lerp(cursor.getBoundingClientRect().left - 7, this.mCoords[0], 0.1),
-          y: this.lerp(cursor.getBoundingClientRect().top - 7, this.mCoords[1], 0.1),
-          width: this.cursor.size + 10,
-          height: this.cursor.size + 10,
+        // if element is in proxy and hovered over
+        /// Find out which element is the closests
+        this.$data.elms.forEach((elm) => {
+          if (elm.dataset.inproxy === "true" && elm === this.elm) {
+            elm.querySelector('[data-magnet]').style.transform = `translate(${-((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px,${ -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px )`;
+          } else {
+            elm.querySelector('[data-magnet]').style.transform = `translate(0px,0px)`;
+          }
         });
 
-        // TweenMax.to(this.node, 0, {
-        //   x: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2),
-        //   y: -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)
-        // });
-        // this.magnet(this.elm, this.elm.dataset.distance);
+        // If stroke turn on TweenMax
+        if (this.$data.cursorStroke) {
+          TweenMax.to(this.$refs.stroke, this.$data.speed, {
+            x: this.lerp(cursor.getBoundingClientRect().left - 7, this.mCoords[0], 0.1),
+            y: this.lerp(cursor.getBoundingClientRect().top - 7, this.mCoords[1], 0.1),
+            width: this.cursor.size + 10,
+            height: this.cursor.size + 10,
+          });
+        }
+
+        let news = this.closest(this.$data.elms);
 
         reqAnimationId = requestAnimationFrame(smoothCursor)
       }
@@ -123,9 +131,9 @@ export default {
         reqAnimationId = requestAnimationFrame(smoothCursor)
       }());
       //
-      // function end() {
-      //   cancelAnimationFrame(reqAnimationId)
-      // }
+      function end() {
+        cancelAnimationFrame(reqAnimationId)
+      }
     },
     middleCircle(elm) {
       let top = elm.getBoundingClientRect().top + (elm.getBoundingClientRect().height / 2);
@@ -133,37 +141,60 @@ export default {
       let center = (position, mouse) => (1 - 0.1) * position + 0.1 * mouse;
       let x = center(left, this.mCoords[0]);
       let y = center(top, this.mCoords[1]);
-      console.log(x, y)
       return {
         x: x,
         y: y
       }
     },
 
-    magnet(elm, distance) {
-      // console.log(this.hypotenuse(elm) < distance)
-      if (this.hypotenuse(elm) < distance && this.activate) {
-
-      } else {
-        TweenMax.to(elm, 0, {
-          x: 0,
-          y: 0
-        });
-      }
-    },
-
     disperseMouseData(i, arr, elm) {
       // Apply Data to element
+      console.log(this.hypotenuse(elm))
       this.setAttributes(elm, {
-        hypotenuse: this.hypotenuse(elm),
-        index: i,
-        inProxy: this.hypotenuse(elm) <= elm.dataset.distance
+        'data-hypotenuse': this.hypotenuse(elm),
+        'data-index': i,
+        'data-inProxy': (elm.dataset.distance) ? this.hypotenuse(elm) <= elm.dataset.distance : 'proxyoff'
       });
       /// Apply list
       Object.assign(arr[i], {
         hypotenuse: this.hypotenuse(elm),
-        inProxy: this.hypotenuse(elm) <= elm.dataset.distance
+        inProxy: (elm.dataset.distance) ? this.hypotenuse(elm) <= elm.dataset.distance : 'proxyoff'
       });
+    },
+    closest(elms) {
+      let holdNums = [];
+      elms.forEach((item) => {
+        holdNums.push({
+          cloest: item.dataset.hypotenuse,
+          elm: item
+        });
+      });
+      let element = null
+      let minvalue = holdNums[0].cloest;
+      for (let i = 0; i < holdNums.length; i++) {
+        if (holdNums[i].cloest < minvalue) {
+          minvalue = holdNums[i].cloest;
+          element = holdNums[i].elm
+        }
+      }
+
+      console.log(minvalue, element);
+      // holdNums.forEach((item) => {
+      //   if (largest <= item.c) {
+      //     largest = item.c;
+      //     element = item.elm
+      //   }
+      // })
+      // if (element) {
+      //   console.log({
+      //     closet: largest,
+      //     elm: element.dataset.index
+      //   })
+      //   return {
+      //     closet: largest,
+      //     elm: element
+      //   }
+      // }
     },
     onMouseMove(e) {
       this.$data.coords = [e.clientX, e.clientY];
@@ -172,23 +203,21 @@ export default {
     onMouseEnter(e) {
       this.$store.commit('mouseStatus/elm', e.target);
       this.$store.commit('mouseStatus/activate', true);
-      this.$store.commit('mouseStatus/addImages', e.target.dataset.img);
       this.$store.commit('mouseStatus/updateSize', e.target.dataset.size)
+      if (this.$data.imageCursor) {
+        this.$store.commit('mouseStatus/addImages', e.target.dataset.img);
+      }
     },
     onMouseLeave(e) {
       this.$store.commit('mouseStatus/elm', '');
       this.$store.commit('mouseStatus/deactivate', false);
-      this.$store.commit('mouseStatus/addImages', '/img/default.jpg');
+      if (this.$data.imageCursor) {
+        this.$store.commit('mouseStatus/addImages', '/img/default.jpg');
+      }
       this.$store.commit('mouseStatus/updateSize', this.defaultSize)
     },
     lerp(start, end, amt) {
       return (1 - amt) * start + amt * end
-    },
-    m(elm) {
-      return {
-        x: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2),
-        y: -((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)
-      }
     },
     hypotenuse(elm) {
       let element = elm.getBoundingClientRect();
@@ -208,6 +237,24 @@ export default {
     },
     setAttributes(el, attrs) {
       Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
+    },
+    createMagnetProxy(elm) {
+      elm.forEach((elm) => {
+        let magnetSize = document.createElement("div");
+        magnetSize.className = 'magnetic-size';
+        magnetSize.style.height = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+        magnetSize.style.width = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+        elm.appendChild(magnetSize);
+      })
+    },
+    updateMangetProxy(elm) {
+      elm.forEach((elm) => {
+        elm.querySelector('.magnetic-size').style.height = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+        elm.querySelector('.magnetic-size').style.width = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+      })
+    },
+    getMangetProxy(height, width) {
+      return (height > width) ? width : height;
     },
   },
 
@@ -229,24 +276,37 @@ export default {
           data: elm.dataset,
         });
       });
+
       this.startCursor();
+
+      // Developer helper tool
+      if (this.$data.showMagnetProxy) {
+        window.addEventListener('resize', () => this.updateMangetProxy(this.$data.elms));
+        this.createMagnetProxy(this.$data.elms);
+      }
     }
   },
   beforeDestroy: function() {
-    document.removeEventListener('mouseout', this.onMouseLeave);
-    document.removeEventListener('mouseover', this.onMouseEnter);
+    document.querySelector('body').removeEventListener('mousemove', (e) => this.onMouseMove(e));
+    elm.removeEventListener('mouseout', this.onMouseLeave);
+    elm.removeEventListener('mouseover', this.onMouseEnter);
+    if (this.$data.showMagnetProxy) {
+      window.removeEventListener('resize', this.updateMangetProxy(this.$data.elms));
+    }
   }
 };
 </script>
 
 <style lang="scss">
-$size: 25px;
+$size: 10px;
+$color: red;
 #cursor-container {
     position: fixed;
     width: 100%;
     height: 100%;
     z-index: 99999999;
     pointer-events: none;
+
     // Js Vue Classes
     &.cursor-hover {
         height: $size + 10;
@@ -256,7 +316,20 @@ $size: 25px;
     #cursor {
         width: $size;
         height: $size;
-        overflow: hidden;
+
+        #cursor-dot {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            margin: auto;
+            border-radius: 50%;
+            background-color: $color;
+        }
+        /// Image Cursor image
         #cursor-bg {
             width: 100%;
             height: 100%;
@@ -273,11 +346,31 @@ $size: 25px;
         width: $size;
         height: $size;
         border-radius: 50%;
-        border: 1px solid red;
+        border: 1px solid $color;
     }
 }
+
+.magnetic-size {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    margin: auto;
+    border-radius: 50%;
+    border: 2px dashed $color;
+    z-index: 1;
+    pointer-events: none;
+}
+
 /// Attributes in proxy
-[inproxy='true'] {
-    padding: 20px;
+[data-inproxy='true'] {
+    border: 1px solid red;
+}
+
+[data-cursor-hover] {
+    [data-magnet] {
+        transition: transform 200ms ease-out;
+    }
 }
 </style>
