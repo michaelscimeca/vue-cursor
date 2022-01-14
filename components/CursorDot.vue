@@ -48,6 +48,7 @@ export default {
       showMagnetProxy: true,
       imageCursor: false,
       cursorStroke: false,
+      showCursorsProxyNum: true
     };
   },
   computed: {
@@ -102,15 +103,19 @@ export default {
           width: this.cursor.size,
           height: this.cursor.size,
         });
-        // if element is in proxy and hovered over
+
+        let closestToCursor = this.closestToCursor(this.$data.elms);
+        // If element is in proxy and hovered over
         /// Find out which element is the closests
         this.$data.elms.forEach((elm) => {
-          if (elm.dataset.inproxy === "true" && elm === this.elm) {
+          if (closestToCursor.elm === elm) {
             elm.querySelector('[data-magnet]').style.transform = `translate(${-((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px,${ -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px )`;
           } else {
             elm.querySelector('[data-magnet]').style.transform = `translate(0px,0px)`;
           }
         });
+
+
 
         // If stroke turn on TweenMax
         if (this.$data.cursorStroke) {
@@ -121,8 +126,6 @@ export default {
             height: this.cursor.size + 10,
           });
         }
-
-        let news = this.closest(this.$data.elms);
 
         reqAnimationId = requestAnimationFrame(smoothCursor)
       }
@@ -149,7 +152,6 @@ export default {
 
     disperseMouseData(i, arr, elm) {
       // Apply Data to element
-      console.log(this.hypotenuse(elm))
       this.setAttributes(elm, {
         'data-hypotenuse': this.hypotenuse(elm),
         'data-index': i,
@@ -160,41 +162,22 @@ export default {
         hypotenuse: this.hypotenuse(elm),
         inProxy: (elm.dataset.distance) ? this.hypotenuse(elm) <= elm.dataset.distance : 'proxyoff'
       });
+      elm.querySelector('.data').innerHTML = Math.round(elm.dataset.hypotenuse);
+
     },
-    closest(elms) {
+    closestToCursor(elms) {
       let holdNums = [];
       elms.forEach((item) => {
         holdNums.push({
-          cloest: item.dataset.hypotenuse,
+          /// Must parse number floating causes issues
+          Cost: parseInt(item.dataset.hypotenuse),
           elm: item
         });
       });
-      let element = null
-      let minvalue = holdNums[0].cloest;
-      for (let i = 0; i < holdNums.length; i++) {
-        if (holdNums[i].cloest < minvalue) {
-          minvalue = holdNums[i].cloest;
-          element = holdNums[i].elm
-        }
-      }
-
-      console.log(minvalue, element);
-      // holdNums.forEach((item) => {
-      //   if (largest <= item.c) {
-      //     largest = item.c;
-      //     element = item.elm
-      //   }
-      // })
-      // if (element) {
-      //   console.log({
-      //     closet: largest,
-      //     elm: element.dataset.index
-      //   })
-      //   return {
-      //     closet: largest,
-      //     elm: element
-      //   }
-      // }
+      let closestToCursor = holdNums.reduce(function(prev, curr) {
+        return prev.Cost < curr.Cost ? prev : curr;
+      });
+      return closestToCursor
     },
     onMouseMove(e) {
       this.$data.coords = [e.clientX, e.clientY];
@@ -238,6 +221,12 @@ export default {
     setAttributes(el, attrs) {
       Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
     },
+    cursorLocation(elm) {
+      let cursorProxyData = document.createElement("div");
+      cursorProxyData.className = 'data';
+      cursorProxyData.innerHTML = Math.round(elm.dataset.hypotenuse);
+      elm.appendChild(cursorProxyData);
+    },
     createMagnetProxy(elm) {
       elm.forEach((elm) => {
         let magnetSize = document.createElement("div");
@@ -261,7 +250,7 @@ export default {
   mounted: function() {
     if (!this.touchevents) {
       document.body.style.cursor = 'none';
-      // stroke Mouse Listener
+      // Stroke Mouse Listener
       document.querySelector('body').addEventListener('mousemove', (e) => this.onMouseMove(e));
       // Grab Elements
       this.$data.elms = [...document.querySelectorAll('[data-cursor-hover]')];
@@ -275,8 +264,10 @@ export default {
           node: elm,
           data: elm.dataset,
         });
+        // Developer helper tool
+        this.cursorLocation(elm)
       });
-
+      // Start Cursor
       this.startCursor();
 
       // Developer helper tool
