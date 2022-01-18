@@ -43,15 +43,15 @@ export default {
       coords: [-30, -30],
       elms: [],
       elmsData: [],
-      mouvinDefaultSize: 10,
+      mauvinDefaultSize: 5,
       speed: 0.2,
       showMagnetProxy: true,
+      showCursorsProxyNum: true,
       dotCursor: true,
       strokeCursor: false,
       imageCursor: false,
-      showCursorsProxyNum: true,
       effectAllElementsInArea: false,
-      mouvin: null,
+      Mauvin: null,
       raf: null
     };
   },
@@ -79,7 +79,7 @@ export default {
     },
     cursor() {
       return {
-        size: parseInt(this.mouvinDefaultSize)
+        size: parseInt(this.$data.mauvinDefaultSize)
       };
     },
     cursorImage() {
@@ -97,16 +97,16 @@ export default {
     }
   },
   methods: {
-    startMouvin: function() {
-      this.$data.mouvin = () => {
-        // Mouvin
+    startMauvin() {
+      this.$data.Mauvin = () => {
+        // Mauvin
         TweenMax.to(this.$refs.cursor, this.$data.speed, {
           x: this.mCoords[0] - (this.cursor.size / 2),
           y: this.mCoords[1] - (this.cursor.size / 2),
           width: this.cursor.size,
           height: this.cursor.size,
         });
-        // Mouvin's Border Stroke
+        // Mauvin's Border Stroke
         if (this.$data.strokeCursor) {
           TweenMax.to(this.$refs.stroke, this.$data.speed, {
             x: this.lerp(cursor.getBoundingClientRect().left - 7, this.mCoords[0], 0.1),
@@ -147,9 +147,9 @@ export default {
             }
           });
         }
-        this.$data.raf = requestAnimationFrame(this.$data.mouvin);
+        this.$data.raf = requestAnimationFrame(this.$data.Mauvin);
       }
-      this.$data.mouvin();
+      this.$data.Mauvin();
     },
     middleCircle(elm) {
       let top = elm.getBoundingClientRect().top + (elm.getBoundingClientRect().height / 2);
@@ -189,14 +189,14 @@ export default {
     onMouseEnter(e) {
       this.$store.commit('mouseStatus/elm', e.target);
       this.$store.commit('mouseStatus/activate', true);
-      this.$store.commit('mouseStatus/updateSize', (e.target.dataset.size) ? e.target.dataset.size : this.$data.mouvinDefaultSize)
+      this.$store.commit('mouseStatus/updateSize', (e.target.dataset.size) ? e.target.dataset.size : this.$data.mauvinDefaultSize);
       if (this.$data.imageCursor) this.$store.commit('mouseStatus/addImages', e.target.dataset.img);
     },
     onMouseLeave(e) {
       this.$store.commit('mouseStatus/elm', '');
       this.$store.commit('mouseStatus/deactivate', false);
       if (this.$data.imageCursor) this.$store.commit('mouseStatus/addImages', '/img/default.jpg');
-      this.$store.commit('mouseStatus/updateSize', this.mouvinDefaultSize)
+      this.$store.commit('mouseStatus/updateSize', this.$data.mauvinDefaultSize);
     },
     lerp(start, end, amt) {
       return (1 - amt) * start + amt * end
@@ -233,11 +233,14 @@ export default {
     createMagnetProxy(elm) {
       if (document.querySelectorAll('.magnetic-size').length !== this.$data.elms.length) {
         elm.forEach((elm) => {
-          let magnetSize = document.createElement("div");
-          magnetSize.className = 'magnetic-size';
-          magnetSize.style.height = `${this.getMangetProxy(elm, elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
-          magnetSize.style.width = `${this.getMangetProxy(elm, elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
-          elm.appendChild(magnetSize);
+          if (elm.dataset.distance !== undefined) {
+            let magnetSize = document.createElement("div");
+            magnetSize.className = 'magnetic-size';
+            magnetSize.style.height = `${this.getMangetProxy(elm, elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+            magnetSize.style.width = `${this.getMangetProxy(elm, elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+            elm.appendChild(magnetSize);
+          }
+
         });
       }
     },
@@ -281,7 +284,7 @@ export default {
         this.cursorLocation();
       }
       // Start Cursor
-      this.startMouvin();
+      this.startMauvin();
       // Developer helper tool
       if (this.$data.showMagnetProxy) {
         window.addEventListener('resize', () => this.updateMangetProxy(this.$data.elms));
