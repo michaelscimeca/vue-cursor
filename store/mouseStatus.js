@@ -1,6 +1,5 @@
 export const state = () => ({
   coords: [-30, -30],
-  size: 25,
   active: false,
   elm: {},
   cursorImage: 'img/default.jpg',

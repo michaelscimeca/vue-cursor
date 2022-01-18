@@ -206,7 +206,7 @@ body {
         height: 25vh;
         margin: 20px;
         box-sizing: border-box;
-        background-color: green;
+        background-color: gray;
 
         img {
             height: 100%;
