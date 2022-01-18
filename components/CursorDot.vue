@@ -2,7 +2,26 @@
 <div id="cursor-container" :class="classes">
   <div v-if="this.$data.cursorStroke" id="stroke" ref="stroke"></div>
   <div id="cursor" ref="cursor">
-    <div v-if="!this.$data.imageCursor" id="cursor-dot" :style="{width: `${this.cursor.size}px`, height: `${this.cursor.size}px`}"></div>
+    <div class="box" v-if="this.$data.gooeyCursor">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <svg xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+          <filter id="filter-name">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="my-blur" />
+            <feColorMatrix in="my-blur" mode="matrix" values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 20 -8" result="my-gooey" />
+          </filter>
+        </defs>
+      </svg>
+    </div>
+    <div v-if="this.$data.dotCursor" id="cursor-dot" :style="{width: `${this.cursor.size}px`, height: `${this.cursor.size}px`}"></div>
     <div v-if="this.$data.imageCursor" id="cursor-bg" :style="{ backgroundImage: 'url(' + this.cursorImage + ')' }"></div>
   </div>
 </div>
@@ -47,9 +66,11 @@ export default {
       speed: 0.2,
       showMagnetProxy: true,
       imageCursor: false,
+      dotCursor: true,
       cursorStroke: false,
       showCursorsProxyNum: true,
       effectAllElementsInArea: false
+
     };
   },
   computed: {
@@ -97,47 +118,48 @@ export default {
     startCursor: function() {
       let reqAnimationId;
       let smoothCursor = () => {
-          // Cursor
-          TweenMax.to(this.$refs.cursor, this.$data.speed, {
-            x: this.mCoords[0] - (this.cursor.size / 2),
-            y: this.mCoords[1] - (this.cursor.size / 2),
-            width: this.cursor.size,
-            height: this.cursor.size,
+        // Cursor
+        TweenMax.to(this.$refs.cursor, this.$data.speed, {
+          x: this.mCoords[0] - (this.cursor.size / 2),
+          y: this.mCoords[1] - (this.cursor.size / 2),
+          width: this.cursor.size,
+          height: this.cursor.size,
+        });
+        // If element is in proxy and hovered over
+        if (!this.$data.effectAllElementsInArea) {
+          // Grab closest element
+          let closestToCursor = this.closestToCursor(this.$data.elms);
+          this.$data.elms.forEach((elm) => {
+            if (closestToCursor.elm === elm && elm.dataset.inproxy === "true") {
+              elm.querySelector('[data-magnet]').style.transform = `translate(${-((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px,${ -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px )`;
+            } else {
+              elm.querySelector('[data-magnet]').style.transform = `translate(0px,0px)`;
+            }
           });
-          // If element is in proxy and hovered over
-          if (!this.$data.effectAllElementsInArea) {
-            // Grab closest element
-            let closestToCursor = this.closestToCursor(this.$data.elms);
-            this.$data.elms.forEach((elm) => {
-              if (closestToCursor.elm === elm && elm.dataset.inproxy === "true") {
-                elm.querySelector('[data-magnet]').style.transform = `translate(${-((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px,${ -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px )`;
-              } else {
-                elm.querySelector('[data-magnet]').style.transform = `translate(0px,0px)`;
-              }
-            });
-          } else {
-            this.$data.elms.forEach((elm) => {
-              if (elm.dataset.inproxy === "true") {
-                elm.querySelector('[data-magnet]').style.transform = `translate(${-((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px,${ -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px )`;
-              } else {
-                elm.querySelector('[data-magnet]').style.transform = `translate(0px,0px)`;
-              }
-            });
-          }
-          // If stroke turn on TweenMax
-          if (this.$data.cursorStroke) {
-            TweenMax.to(this.$refs.stroke, this.$data.speed, {
-              x: this.lerp(cursor.getBoundingClientRect().left - 7, this.mCoords[0], 0.1),
-              y: this.lerp(cursor.getBoundingClientRect().top - 7, this.mCoords[1], 0.1),
-              width: this.cursor.size + 10,
-              height: this.cursor.size + 10,
-            });
-          }
-          reqAnimationId = requestAnimationFrame(smoothCursor)
+        } else {
+          this.$data.elms.forEach((elm) => {
+            if (elm.dataset.inproxy === "true") {
+              elm.querySelector('[data-magnet]').style.transform = `translate(${-((Math.sin(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px,${ -((Math.cos(this.angle(elm)) * this.hypotenuse(elm)) / 2)}px )`;
+            } else {
+              elm.querySelector('[data-magnet]').style.transform = `translate(0px,0px)`;
+            }
+          });
         }
-        (function() {
-          reqAnimationId = requestAnimationFrame(smoothCursor)
-        }());
+        // If stroke turn on TweenMax
+        if (this.$data.cursorStroke) {
+          TweenMax.to(this.$refs.stroke, this.$data.speed, {
+            x: this.lerp(cursor.getBoundingClientRect().left - 7, this.mCoords[0], 0.1),
+            y: this.lerp(cursor.getBoundingClientRect().top - 7, this.mCoords[1], 0.1),
+            width: this.cursor.size + 10,
+            height: this.cursor.size + 10,
+          });
+        }
+        reqAnimationId = requestAnimationFrame(smoothCursor)
+      }
+
+      (function() {
+        reqAnimationId = requestAnimationFrame(smoothCursor)
+      }());
 
       function end() {
         cancelAnimationFrame(reqAnimationId)
@@ -156,20 +178,16 @@ export default {
     },
 
     disperseMouseData(i, arr, elm) {
+      // console.log((elm.dataset.distance) ? this.hypotenuse(elm) <= elm.dataset.distance : 'proxyoff', elm)
       // Apply Data to element
       this.setAttributes(elm, {
         'data-hypotenuse': this.hypotenuse(elm),
         'data-index': i,
         'data-inProxy': (elm.dataset.distance) ? this.hypotenuse(elm) <= elm.dataset.distance : 'proxyoff'
       });
-      /// Apply list
-      Object.assign(arr[i], {
-        hypotenuse: this.hypotenuse(elm),
-        inProxy: (elm.dataset.distance) ? this.hypotenuse(elm) <= elm.dataset.distance : 'proxyoff'
-      });
       // Developer Tool
       if (this.$data.showCursorsProxyNum) {
-        elm.querySelector('.data').innerHTML = Math.round(elm.dataset.hypotenuse);
+        elm.querySelector('.hypotenuse').innerHTML = Math.round(elm.dataset.hypotenuse);
       }
     },
     closestToCursor(elms) {
@@ -187,13 +205,14 @@ export default {
       return closestToCursor
     },
     onMouseMove(e) {
+      //Track mouse position
       this.$data.coords = [e.clientX, e.clientY];
       this.$store.commit('mouseStatus/updateCoords', [e.clientX, e.clientY]);
     },
     onMouseEnter(e) {
       this.$store.commit('mouseStatus/elm', e.target);
       this.$store.commit('mouseStatus/activate', true);
-      this.$store.commit('mouseStatus/updateSize', e.target.dataset.size)
+      this.$store.commit('mouseStatus/updateSize', (e.target.dataset.size) ? e.target.dataset.size : this.$data.defaultSize)
       if (this.$data.imageCursor) {
         this.$store.commit('mouseStatus/addImages', e.target.dataset.img);
       }
@@ -229,10 +248,10 @@ export default {
       Object.keys(attrs).forEach(key => el.setAttribute(key, attrs[key]));
     },
     cursorLocation() {
-      if (document.querySelectorAll('.data').length !== this.$data.elms.length) {
+      if (document.querySelectorAll('.hypotenuse').length !== this.$data.elms.length) {
         this.$data.elms.forEach((elm, i) => {
           let cursorProxyData = document.createElement("div");
-          cursorProxyData.className = 'data';
+          cursorProxyData.className = 'hypotenuse';
           cursorProxyData.innerHTML = Math.round(elm.dataset.hypotenuse);
           elm.appendChild(cursorProxyData);
         })
@@ -243,20 +262,27 @@ export default {
         elm.forEach((elm) => {
           let magnetSize = document.createElement("div");
           magnetSize.className = 'magnetic-size';
-          magnetSize.style.height = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
-          magnetSize.style.width = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+          magnetSize.style.height = `${this.getMangetProxy(elm, elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+          magnetSize.style.width = `${this.getMangetProxy(elm, elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
           elm.appendChild(magnetSize);
         });
       }
     },
     updateMangetProxy(elm) {
       elm.forEach((elm) => {
-        elm.querySelector('.magnetic-size').style.height = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
-        elm.querySelector('.magnetic-size').style.width = `${this.getMangetProxy(elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+        elm.querySelector('.magnetic-size').style.height = `${this.getMangetProxy(elm,elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
+        elm.querySelector('.magnetic-size').style.width = `${this.getMangetProxy(elm,elm.getBoundingClientRect().width, elm.getBoundingClientRect().height)}px`;
       })
     },
-    getMangetProxy(height, width) {
-      return (height > width) ? width : height;
+    getMangetProxy(elm, width, height) {
+      let distance;
+      if (elm.dataset.distance) {
+        distance = elm.dataset.distance * 2;
+      } else if (distance === undefined) {
+        distance = (height < width) ? width : height;
+        distance = distance / 33;
+      }
+      return distance
     },
   },
   mounted: function() {
@@ -276,10 +302,8 @@ export default {
           node: elm,
           data: elm.dataset,
         });
-        // Developer helper tool
-
       });
-
+      // Developer helper tool
       if (this.$data.showCursorsProxyNum) {
         this.cursorLocation();
       }
@@ -309,6 +333,8 @@ export default {
 <style lang="scss">
 $size: 10px;
 $color: red;
+
+$gooey: url("#filter-name");
 #cursor-container {
     position: fixed;
     width: 100%;
@@ -358,7 +384,7 @@ $color: red;
         border: 1px solid $color;
     }
 }
-
+//Developer Tool
 .magnetic-size {
     position: absolute;
     top: 0;
@@ -370,11 +396,31 @@ $color: red;
     border: 2px dashed $color;
     z-index: 1;
     pointer-events: none;
+    animation: magnetic-size 120s infinite;
+}
+
+@keyframes magnetic-size {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+//Developer Tool
+.hypotenuse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 5px 10px;
+    background-color: red;
+    pointer-events: none;
 }
 
 /// Attributes in proxy
 [data-inproxy='true'] {
-    border: 1px solid red;
+    border: 5px solid red;
 }
 
 [data-cursor-hover] {
